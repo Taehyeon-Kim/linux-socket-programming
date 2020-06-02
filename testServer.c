@@ -1,14 +1,4 @@
-//
-//  main.c
-//  test
-//
-//  Created by taehy.k on 2020/05/29.
-//  Copyright © 2020 taehy.k. All rights reserved.
-//
-//  소켓 통신 서버 프로그램의 이해 200529
-
-// int socket(int domain, int type, int protocol);
-
+// 서버 단
 
 #include <stdio.h>
 #include <stdlib.h> // atoi 사용
@@ -17,11 +7,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h> // htonl, htons, INADDR_ANY, sockaddr_in
 
-#define BUF_LEN 128
-// 메시지 송수신에 사용될 버퍼 크기를 선언
-
-// 데이터 전송!!!
-char msg[] = "Hello this is server!\n";
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
@@ -69,22 +54,43 @@ int main(int argc, char *argv[])
     
     printf("현재 서버가 열려있는 중입니다.. 기다려주세요...\n");
     
+    clnt_addr_size = sizeof(clnt_addr);
+    clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
+    if(clnt_sock == -1)
+        error_handling("accept error");
+    
+    
+    // 파일 열기
+    FILE *fp = fopen("size460.mp4", "rb");
+    
+    char data[1460];
+    int file_len;
+    // 파일 사이즈 fsize변수에 저장
     // 해당 코드 부분이 중요
     while(1){
         // accpet부분
-        clnt_addr_size = sizeof(clnt_addr);
-        clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
-        if(clnt_sock == -1)
-            error_handling("accept error");
-        inet_ntop(AF_INET, &clnt_addr.sin_addr.s_addr, temp, sizeof(temp));
-        
-        msg_size = read(clnt_sock, buffer, 1024);
-        write(clnt_sock, buffer, msg_size);
-        
-        close(clnt_sock);
-        printf("Server : %s client closed.\n", temp);
+        file_len = fread(data, sizeof(char), 1460, fp);
+        send(clnt_sock, data, file_len, 0);
+        if(feof(fp)) break;
+
+        printf("전송 중....\n");
     }
+    fclose(fp);
     
+    // 사이즈 측정
+    FILE *file = fopen("size460.mp4","rb");
+    int fsize;
+    
+    fseek(file, 0, SEEK_END);
+    fsize = ftell(file);
+    
+    printf("size460.mp4 size is %d\n", fsize);
+    fclose(file);
+    
+    
+    close(clnt_sock);
+           
+    printf("Server : %s client closed.\n", temp);
     
     // 소켓 닫기
     

@@ -1,10 +1,4 @@
-//
-//  main.c
-//  test_clnt
-//
-//  Created by taehy.k on 2020/05/29.
-//  Copyright © 2020 taehy.k. All rights reserved.
-//
+// 클라이언트 단
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +14,7 @@ int main(int argc, const char * argv[]) {
     int clnt_sock;
     struct sockaddr_in serv_addr;
     char test_msg[] = "Hello, server!";
-    char message[1024] = {0x00, };
+    char message[1460] = {0x00, };
     char buffer[20];
     int n;
     
@@ -36,16 +30,26 @@ int main(int argc, const char * argv[]) {
     if (connect(clnt_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
         error_handling("connect error");
     
+    FILE *fp = fopen("size460.mp4", "wb");
     
-    scanf("%s", buffer);
-    buffer[strlen(buffer)] = '\0';
-    write(clnt_sock, buffer, strlen(buffer)+1);
-    n = read(clnt_sock, message, sizeof(message)-1);
-    if (n < 0)
-        return -1;
+    while((n = recv(clnt_sock, message, 1460, 0)) != 0)
+    {
+        fwrite(message, sizeof(char), n, fp);
+        printf("Message from server : %x\n", n);
+    }
     
-    //write(clnt_sock, test_msg, sizeof(test_msg)+1);
-    printf("Message from server : %s\n", message);
+    fclose(fp);
+    
+    // 사이즈 측정
+    FILE *file = fopen("size460.mp4","rb");
+    int fsize;
+    
+    fseek(file, 0, SEEK_END);
+    fsize = ftell(file);
+    
+    printf("size460.mp4 size is %d\n", fsize);
+    fclose(file);
+    
     close(clnt_sock);
     return 0;
 }
